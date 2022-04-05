@@ -242,7 +242,7 @@ PROGRAM cdfmoc
   IF ( lrap ) THEN 
      ! all the work will be done in a separated routine for RAPID-MOCHA section
      CALL rapid_amoc 
-     STOP 99  ! program stops here in this case
+     STOP 0  ! program stops here in this case
   ENDIF
 
   npiglo = getdim (cf_vfil,cn_x)

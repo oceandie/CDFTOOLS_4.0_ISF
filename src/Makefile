@@ -244,14 +244,20 @@ cdfmhst: cdfio.o  cdfmhst.f90
 cdfvhst: cdfio.o  cdfvhst.f90
 	$(F90) cdfvhst.f90 -o $(BINDIR)/cdfvhst cdfio.o modcdfnames.o $(FFLAGS)
 
+cdftopos: cdfio.o  cdftopos.f90
+	$(F90) cdftopos.f90 -o $(BINDIR)/cdftopos cdfio.o modcdfnames.o $(FFLAGS)
+
+cdfroughness: cdfio.o  cdfroughness.f90
+	$(F90) cdfroughness.f90 -o $(BINDIR)/cdfroughness cdfio.o modcdfnames.o $(FFLAGS)
+
 cdfvtrp: cdfio.o  cdfvtrp.f90
 	$(F90) cdfvtrp.f90 -o $(BINDIR)/cdfvtrp cdfio.o modcdfnames.o $(FFLAGS)
 
 cdfpsi: cdfio.o  modutils.o cdfpsi.f90
 	$(F90) cdfpsi.f90  -o $(BINDIR)/cdfpsi cdfio.o modcdfnames.o modutils.o $(FFLAGS)
 
-cdftransport: cdfio.o  modutils.o cdftransport.f90
-	$(F90) cdftransport.f90 -o $(BINDIR)/cdftransport cdfio.o modcdfnames.o modutils.o $(FFLAGS)
+cdftransport: cdfio.o cdftools.o modutils.o cdftransport.f90
+	$(F90) cdftransport.f90 -o $(BINDIR)/cdftransport cdfio.o cdftools.o modcdfnames.o modutils.o $(FFLAGS)
 
 cdfvFWov: cdfio.o  modutils.o cdfvFWov.f90
 	$(F90) cdfvFWov.f90 -o $(BINDIR)/cdfvFWov cdfio.o modcdfnames.o modutils.o $(FFLAGS)

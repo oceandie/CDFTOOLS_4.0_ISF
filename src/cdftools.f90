@@ -73,7 +73,6 @@ CONTAINS
 
     LOGICAL                                   :: ll_again, ll_bnd, ll_verbose=.FALSE.
     !!--------------------------------------------------------------------------
-    CALL ReadCdfNames()
     imin = 0 ; jmin = 0
 
     dl_xmin = pxmin

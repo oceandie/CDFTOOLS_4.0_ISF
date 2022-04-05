@@ -1580,10 +1580,10 @@ CONTAINS
     ENDIF
 
     ! Caution : order does matter !
+
     IF (lsf )  WHERE (getvar /= spval )  getvar=getvar*sf
     IF (lao )  WHERE (getvar /= spval )  getvar=getvar + ao
     IF (llog)  WHERE (getvar /= spval )  getvar=10**getvar
-    WHERE (getvar == spval )  getvar=0.0
 
     istatus=NF90_CLOSE(incid)
 
