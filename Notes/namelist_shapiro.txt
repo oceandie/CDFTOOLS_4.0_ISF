@@ -1,0 +1,4 @@
+&nam_shapiro
+l_pass_shallow_updates = .TRUE.
+l_pass_fixed_pt_updates = .FALSE.
+/
