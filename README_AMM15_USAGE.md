@@ -1,10 +1,5 @@
 # Notes on using Shapiro for smoothing GEBCO/EMODNET for AMM15
 
-Notes already exist in the onenote NoteBook:
-[Pre Filter Bathy One Note Section](https://metoffice-my.sharepoint.com/personal/enda_odea_metoffice_gov_uk/_layouts/15/Doc.aspx?sourcedoc={128b2768-0a84-4e3d-9880-e9427c105bef}&action=edit&wd=target%28Pre%20Filter%20Bathy.one%7C2417d34d-fa86-4604-b928-6c40c6cff7e2%2F%29&wdorigin=717)
-
-Particular attention is required with regards to
-[What does the CDF tools do with LSM](https://metoffice-my.sharepoint.com/personal/enda_odea_metoffice_gov_uk/_layouts/15/Doc.aspx?sourcedoc={128b2768-0a84-4e3d-9880-e9427c105bef}&action=edit&wd=target%28Pre%20Filter%20Bathy.one%7C2417d34d-fa86-4604-b928-6c40c6cff7e2%2FWhat%20does%20the%20CDF%20tools%20do%20with%20LSM%7C4df39033-ee0a-44e1-9561-6d402798dc75%2F%29&wdorigin=703)
 
 We have sample Files to work with:
 
@@ -15,6 +10,8 @@ We have sample Files to work with:
       * This is done on the expanded AMM15 domain so taht the smoother wont effect the AMM15 bdy
 
 ## Reformat the data
+
+### OLD way was to use a template file, This is no longer donwe see next section
 
 The smoother has particular format in mind so we use the reference file:
    * bathymetry_u-ai424.ncS35TT
@@ -71,6 +68,61 @@ Then just write out the data to disk ready for processing by the smoother.
 with ProgressBar():
   ds.to_netcdf("TESTT.nc")
 ```
+
+### New way is to just set the attributes directly in python/xarray, no need of template
+
+```bash
+xarray_format_notemplate.py
+```
+
+First get the input dataset
+
+```python
+dsb = xr.open_mfdataset('EXPANDED_MERGE_GEBCO_DEEP_TO_200-100_EMODNET_TO_10-5_GEBCO_TO_COAST_amm15.bathydepth.co7.cs3x.cs20.nc')
+```
+
+work on a copy of the date
+```python
+dsc=dsb.copy()
+dsc.Bathymetry.values[:] = np.zeros(np.shape(dsc.Bathymetry.values[:]))
+
+A=+np.ones(np.shape(dsc.Bathymetry.values[:]))* dsc.Bathymetry.values[:]
+```
+
+Due to negative bathy, we could have 0 as a real valid bathy value. I set it up arbitarily as some large negative number here 1000 m
+```python
+A[np.where(np.isnan(A[:]))] = -1000.
+```
+
+Set up new data set ds, based on Bathymetry and dsb lat lon and add in time counter
+
+```python
+ds = xr.Dataset(
+    data_vars=dict(
+        Bathymetry = (["time_counter","y", "x"], A[np.newaxis,:,:] )),
+    coords=dict(
+        nav_lon = (["y", "x"], dsb.lon.data),
+        nav_lat = (["y", "x"], dsb.lat.data),
+        time_counter = (["time_counter"], np.ones(1)),
+    ),
+)
+```
+
+Now set up the attributes for each case
+
+```python
+ds.nav_lat.attrs['standard_name'] = "latitude"
+ds.nav_lat.attrs['longname'] = "Latitude"
+ds.nav_lat.attrs['units'] = "degrees_north"
+ds.nav_lon.attrs['standard_name'] = "longitude"
+ds.nav_lon.attrs['longname'] = "Longitude"
+ds.nav_lon.attrs['units'] = "degrees_east"
+ds.Bathymetry.attrs = dict(_FillValue=-1000.)
+```
+
+The write it out
+
+
 
 ## Do the Smoothing.
 

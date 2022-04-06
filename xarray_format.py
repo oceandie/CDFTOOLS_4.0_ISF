@@ -22,6 +22,7 @@ A=+np.ones(np.shape(dsc.Bathymetry.values[:]))* dsc.Bathymetry.values[:]
 #A=np.ones(np.shape(dsc.Bathymetry.values[:]))* dsc.Bathymetry.values[:]
 #A[np.where(A[:]<100)] = 100
 A[np.where(np.isnan(A[:]))] = -1000.
+print(dsa.time_counter.data)
 
 ds = xr.Dataset(
     data_vars=dict(
