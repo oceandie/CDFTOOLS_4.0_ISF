@@ -6,7 +6,8 @@ import sys
 
 from dask.diagnostics import ProgressBar
 
-dsb = xr.open_mfdataset('EXPANDED_MERGE_GEBCO_DEEP_TO_200-100_EMODNET_TO_10-5_GEBCO_TO_COAST_amm15.bathydepth.co7.cs3x.cs20.nc')
+#dsb = xr.open_mfdataset('EXPANDED_MERGE_GEBCO_DEEP_TO_200-100_EMODNET_TO_10-5_GEBCO_TO_COAST_amm15.bathydepth.co7.cs3x.cs20.nc')
+dsb = xr.open_mfdataset('CORRECTED_EXPANDED_MERGE_GEBCO_DEEP_TO_200-100_EMODNET_TO_10-5_GEBCO_TO_COAST_amm15.bathydepth.co7.cs3x.cs20.nc')
 
 
 dsc=dsb.copy()
@@ -15,6 +16,7 @@ dsc.Bathymetry.values[:] = np.zeros(np.shape(dsc.Bathymetry.values[:]))
 
 A=+np.ones(np.shape(dsc.Bathymetry.values[:]))* dsc.Bathymetry.values[:]
 A[np.where(np.isnan(A[:]))] = -1000.
+A[np.where(A[:]>1.e20)] = -1000.
 
 ds = xr.Dataset(
     data_vars=dict(
