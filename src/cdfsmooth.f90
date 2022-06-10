@@ -543,7 +543,9 @@ CONTAINS
     !! ** Purpose :  apply a korder 2D shapiro filter kpass times. The land/sea mask and 
     !!               values at selected points may be forced to their initial values.  
     !!
-    !! References :  adapted from Mercator code
+    !! References :  Originally adapted from Mercator code.
+    !!               This version rewritten by Mike Bell to implement the algorithm from
+    !!               Francis, P.E., Quart. J. Roy. Met. Soc 101, pp 567-582 (1975)
     !!----------------------------------------------------------------------
     REAL(KIND=4),    DIMENSION(:,:), INTENT(in ) :: px      ! input data
     INTEGER(KIND=4), DIMENSION(:,:), INTENT(in ) :: kiw     ! validity flags
@@ -607,7 +609,7 @@ CONTAINS
     ji_single_pt = 622 ; jj_single_pt = 779
     jst_prt = 400 ;      jend_prt = 405
 
-    OPEN(UNIT=20, file = 'Notes/namelist_shapiro.txt', form='formatted', status='old' )
+    OPEN(UNIT=20, file = 'namelist_shapiro.txt', form='formatted', status='old' )
     READ(NML=nam_shapiro, UNIT = 20) 
     WRITE(NML=nam_shapiro, UNIT=6)
     CLOSE(20)
