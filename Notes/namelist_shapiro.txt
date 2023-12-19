@@ -1,4 +1,6 @@
 &nam_shapiro
+ll_npol_fold = .FALSE.
+ll_cycl = .FALSE.
 l_pass_shallow_updates = .TRUE.
 l_pass_fixed_pt_updates = .FALSE.
 /
