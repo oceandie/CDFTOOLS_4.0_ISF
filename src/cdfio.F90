@@ -1378,7 +1378,7 @@ CONTAINS
     istatus=NF90_CLOSE(incid)
   END FUNCTION
 
-  FUNCTION  getvar (cdfile,cdvar,klev,kpi,kpj,kimin,kjmin, ktime, ldiom)
+  FUNCTION  getvar (cdfile,cdvar,klev,kpi,kpj,kimin,kjmin, ktime, ldiom, keep_mask, no_mesh_check)
     !!---------------------------------------------------------------------
     !!                  ***  FUNCTION  getvar  ***
     !!
@@ -1399,6 +1399,8 @@ CONTAINS
     INTEGER(KIND=4), OPTIONAL, INTENT(in) :: kimin, kjmin ! Optional variable. If missing 1 is assumed
     INTEGER(KIND=4), OPTIONAL, INTENT(in) :: ktime        ! Optional variable. If missing 1 is assumed
     LOGICAL,         OPTIONAL, INTENT(in) :: ldiom        ! Optional variable. If missing false is assumed
+    LOGICAL,         OPTIONAL, INTENT(in) :: keep_mask    ! Optional: If true do not replace masked values with zeroes.
+    LOGICAL,         OPTIONAL, INTENT(in) :: no_mesh_check  ! Optional: If true do not try to figure out which vertical grid version we are using
     REAL(KIND=4), DIMENSION(kpi,kpj) :: getvar            ! 2D REAL 4 holding variable field at klev
 
     INTEGER(KIND=4), DIMENSION(4)               :: istart, icount, inldim
@@ -1409,7 +1411,7 @@ CONTAINS
     REAL(KIND=4)                                :: sf=1., ao=0.        !: Scale factor and add_offset
     REAL(KIND=4)                                :: spval  !: missing value
     REAL(KIND=4) , DIMENSION (:,:), ALLOCATABLE :: zend, zstart
-    LOGICAL                                     :: lliom=.false., llperio=.false.
+    LOGICAL                                     :: lliom=.false., llperio=.false., l_keep_mask=.false., l_no_mesh_check=.false.
     LOGICAL                                     :: llog=.FALSE. , lsf=.FALSE. , lao=.FALSE., ll_verbose=.TRUE.
     !!
     INTEGER(KIND=4)                :: ityp, ierr
@@ -1468,6 +1470,18 @@ CONTAINS
        lliom=.false.
     ENDIF
 
+    IF (.not.PRESENT(keep_mask) ) THEN
+       l_keep_mask=.false.
+    ELSE
+       l_keep_mask=.true.
+    ENDIF
+
+    IF (.not.PRESENT(no_mesh_check) ) THEN
+       l_no_mesh_check=.false.
+    ELSE
+       l_no_mesh_check=.true.
+    ENDIF
+
     ! Must reset the flags to false for every call to getvar
     clvar=clvar
     llog = .FALSE.
@@ -1482,7 +1496,7 @@ CONTAINS
     ! gdepw(time,z,y_a,x_a)            gdepw_0(t,z)    gdepw_1d(t,z)
     !   e3t(time,z,y_a,x_a)            e3t_0(t,z)      e3t_1d(t,z)
     !   e3w(time,z,y_a,x_a)            e3w_0(t,z)      e3w_1d(t,z)
-    IF ( cdfile == cn_fzgr ) THEN  !
+    IF ( cdfile == cn_fzgr .AND. .NOT. l_no_mesh_check) THEN  !
       ierr = SetMeshZgrVersion ( ll_verbose )
       IF ( cdvar == cn_ve3t ) THEN
         SELECT CASE ( cg_zgr_ver )
@@ -1515,6 +1529,7 @@ CONTAINS
       clvar = findvarname(cdfile,cdvar, ld_verbose=ll_verbose)
     ENDIF
 
+    WRITE(*,*) 'Looking for variable ',clvar
     istatus=NF90_INQUIRE(incid, unlimitedDimId=id_dimunlim)
     CALL ERR_HDL(NF90_INQ_VARID ( incid,clvar,id_var))
 
@@ -1580,10 +1595,12 @@ CONTAINS
     ENDIF
 
     ! Caution : order does matter !
-
     IF (lsf )  WHERE (getvar /= spval )  getvar=getvar*sf
     IF (lao )  WHERE (getvar /= spval )  getvar=getvar + ao
     IF (llog)  WHERE (getvar /= spval )  getvar=10**getvar
+    IF (.not. l_keep_mask) THEN
+       WHERE (getvar == spval )  getvar=0.0
+    ENDIF
 
     istatus=NF90_CLOSE(incid)
 
@@ -1972,7 +1989,6 @@ CONTAINS
     llog=.FALSE.
     lsf=.FALSE.
     lao=.FALSE.
-
 
     CALL ERR_HDL(NF90_OPEN(cdfile,NF90_NOWRITE,incid) )
     CALL ERR_HDL(NF90_INQ_VARID ( incid,clvar,id_var))

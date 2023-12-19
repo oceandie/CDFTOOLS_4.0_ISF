@@ -91,7 +91,6 @@ PROGRAM cdfsmooth
   CHARACTER(LEN=256)                            :: clklist           ! ciphered k-list of level
 
   LOGICAL                                       :: lnc4 = .FALSE.    ! flag for netcdf4 output with chinking and deflation
-  INTEGER(KIND=4)                               :: ji, jj, jmx, jkx !  dummy loop index
 
   !!----------------------------------------------------------------------
   CALL ReadCdfNames()
@@ -268,11 +267,12 @@ PROGRAM cdfsmooth
            DO jk=1,ipk(jvar)
               PRINT *, jt,'/',npt,' and ',jk,'/',ipk(jvar)
               ijk = iklist(jk) 
-              v2d(:,:) = getvar(cf_in,cv_names(jvar),ijk,npiglo,npjglo,ktime=jt)
+              v2d(:,:) = getvar(cf_in,cv_names(jvar),ijk,npiglo,npjglo,ktime=jt,keep_mask=.true.)
               iw(:,:) = 1
               WHERE ( v2d == rspval ) iw =0
               IF ( ncut /= 0 ) CALL filter( nfilter, v2d, iw, w2d)
               IF ( ncut == 0 ) w2d = v2d
+              w2d  = w2d *iw  ! mask filtered data
               ierr = putvar(ncout, id_varout(jvar), w2d, jk, npiglo, npjglo, ktime=jt)
               !
            END DO
@@ -546,7 +546,8 @@ CONTAINS
     !! References :  Originally adapted from Mercator code.
     !!               This version rewritten by Mike Bell to implement the algorithm from
     !!               Francis, P.E., Quart. J. Roy. Met. Soc 101, pp 567-582 (1975)
-    !!----------------------------------------------------------------------
+    !!----------------------------------------------------------------------    
+
     REAL(KIND=4),    DIMENSION(:,:), INTENT(in ) :: px      ! input data
     INTEGER(KIND=4), DIMENSION(:,:), INTENT(in ) :: kiw     ! validity flags
     REAL(KIND=4),    DIMENSION(:,:), INTENT(out) :: py      ! output data
@@ -595,13 +596,13 @@ CONTAINS
     NAMELIST / nam_shapiro / ll_npol_fold, ll_cycl, l_single_point_response, l_pass_shallow_updates, l_pass_fixed_pt_updates, &
    &                         ji_single_pt, jj_single_pt, jst_prt, jend_prt 
 !! Namelist default values 
-    ll_npol_fold = .FALSE.
-    ll_cycl = .FALSE. 
+    ll_npol_fold = .TRUE.
+    ll_cycl = .TRUE. 
     l_single_point_response = .FALSE.
     l_pass_shallow_updates = .TRUE.
     l_pass_fixed_pt_updates = .TRUE.
 
-    zmin_val        =  -5  ! minimum depth (e.g. 10.0 metres) 
+    zmin_val        = 5.0    ! minimum depth (e.g. 10.0 metres) 
     ztol_shallow    = 1.0    ! tolerance in metres of minimum shallow values (zmin_val - ztol_shallow) 
     ztol_fixed      = 1.0    ! tolerance in metres for fit to bathymetry at point specified to be fixed  
     zfactor_shallow = 1.5    ! zfactor_shallow needs to be slightly greater than 1.0   ! 1.1 to 1.5 are reasonable values
@@ -641,7 +642,7 @@ CONTAINS
 
 ! read the indices of points to remain fixed 
     IF ( l_pass_fixed_pt_updates ) THEN 
-       OPEN (unit=20, file = 'Notes/list_fixed_points.txt', form='formatted', status='old' ) 
+       OPEN (unit=20, file = '@Notes/list_fixed_points.txt', form='formatted', status='old' ) 
        READ (20, *) jn_fix_pts
 
        ALLOCATE( ji_fix(jn_fix_pts), jj_fix(jn_fix_pts) )
@@ -771,17 +772,19 @@ CONTAINS
        PRINT *, 'jcount_shallow = ', jcount_shallow
        PRINT *, 'rms_int = ', rms_int
 
-       jcount_fixed = 0 
-       PRINT *, ' px(ji,jj), zpy(ji,jj), ji, jj, jcount where ABS( zpy(ji,jj) - px(ji,jj) ) > ztol_fixed '  
-       DO jpt = 1, jn_fix_pts 
-          ji = ji_fix(jpt)
-          jj = jj_fix(jpt)
-          IF ( zkiw(ji,jj) > 0.0 .AND.  ABS( zpy(ji,jj) - px(ji,jj) ) > ztol_fixed ) THEN     ! zpy is updated value; px is original value 
-             jcount_fixed = jcount_fixed + 1
-	     IF ( jcount_fixed < 50 ) PRINT *, px(ji,jj), zpy(ji,jj), ji, jj, jcount_fixed 
-          ENDIF 
-       ENDDO 
-       PRINT *, 'jcount_fixed = ', jcount_fixed
+       IF ( l_pass_fixed_pt_updates ) THEN 
+          jcount_fixed = 0 
+          PRINT *, ' px(ji,jj), zpy(ji,jj), ji, jj, jcount where ABS( zpy(ji,jj) - px(ji,jj) ) > ztol_fixed '  
+          DO jpt = 1, jn_fix_pts 
+             ji = ji_fix(jpt)
+             jj = jj_fix(jpt)
+             IF ( zkiw(ji,jj) > 0.0 .AND.  ABS( zpy(ji,jj) - px(ji,jj) ) > ztol_fixed ) THEN     ! zpy is updated value; px is original value 
+                jcount_fixed = jcount_fixed + 1
+	        IF ( jcount_fixed < 50 ) PRINT *, px(ji,jj), zpy(ji,jj), ji, jj, jcount_fixed 
+             ENDIF 
+          ENDDO 
+          PRINT *, 'jcount_fixed = ', jcount_fixed
+       ENDIF
 
 ! If output bathymetry is too small at some sea points or not close enough to the original at the selected points, increment zpx 
 
