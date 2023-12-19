@@ -1,2 +1,0 @@
-pandoc README_AMM15_USAGE.md -f markdown -t html -s -o README_AMM15_USAGE.md.html
-
