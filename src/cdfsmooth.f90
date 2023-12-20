@@ -594,7 +594,7 @@ CONTAINS
 !-----------------------------------------------------------------------------------------------
 
     NAMELIST / nam_shapiro / ll_npol_fold, ll_cycl, l_single_point_response, l_pass_shallow_updates, l_pass_fixed_pt_updates, &
-   &                         ji_single_pt, jj_single_pt, jst_prt, jend_prt 
+   &                         zmin_val, ji_single_pt, jj_single_pt, jst_prt, jend_prt 
 !! Namelist default values 
     ll_npol_fold = .TRUE.
     ll_cycl = .TRUE. 
